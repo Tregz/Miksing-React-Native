@@ -1,0 +1,39 @@
+{
+  "name": "Miksing",
+  "version": "6.3.4",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "run:android": "react-native run-android",
+    "run:ios": "react-native run-ios --simulator=\"iPhone X\"",
+    "build:apk": "cd android && ./gradlew assembleRelease",
+    "test": "jest",
+    "lint": "eslint .",
+    "prepare": "patch-package"
+  },
+  "dependencies": {
+    "@react-native-firebase/app": "6.3.4",
+    "@react-navigation/material-bottom-tabs": "^5.1.1",
+    "@react-navigation/native": "^5.0.7",
+    "react": "16.9.0",
+    "react-native": "0.61.5",
+    "react-native-paper": "^3.6.0",
+    "react-native-vector-icons": "^6.6.0",
+    "react-native-webview": "^8.1.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.2",
+    "@babel/runtime": "^7.6.2",
+    "@react-native-community/cli": "latest",
+    "@react-native-community/eslint-config": "^0.0.5",
+    "babel-jest": "^24.9.0",
+    "eslint": "latest",
+    "jest": "^24.9.0",
+    "metro-react-native-babel-preset": "^0.56.0",
+    "patch-package": "^6.1.4",
+    "react-test-renderer": "16.9.0"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}
