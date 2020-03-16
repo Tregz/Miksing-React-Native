@@ -1,29 +1,19 @@
 import React, {Component} from 'react';
 import {Platform, StyleSheet, Text, View, ScrollView, Dimensions} from 'react-native';
-
-import firebase from '@react-native-firebase/app';
-
-// TODO(you): import any additional firebase services that you require for your app, e.g for auth:
-//    1) install the npm package: `yarn add @react-native-firebase/auth@alpha` - you do not need to
-//       run linking commands - this happens automatically at build time now
-//    2) rebuild your app via `yarn run run:android` or `yarn run run:ios`
-//    3) import the package here in your JavaScript code: `import '@react-native-firebase/auth';`
-//    4) The Firebase Auth service is now available to use here: `firebase.auth().currentUser`
-
-import storage from '@react-native-firebase/storage';
+import {Appbar, DefaultTheme} from 'react-native-paper';
+import Video from 'react-native-video'
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 
 import {createMaterialBottomTabNavigator} from '@react-navigation/material-bottom-tabs';
 import {NavigationContainer} from '@react-navigation/native';
-import {Appbar, DefaultTheme} from 'react-native-paper';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-// https://www.npmjs.com/package/react-native-video-player
-// import Video from 'react-native-video-player'; Video with controls
-import Video from 'react-native-video'
+
+import firebase from '@react-native-firebase/app';
+import auth from '@react-native-firebase/auth';
+import storage from '@react-native-firebase/storage';
 
 const Tab = createMaterialBottomTabNavigator();
 const colorPrimary = '#ff9933';
-
-const MyTheme = {
+const Theme = {
     ...DefaultTheme,
     colors: {
         ...DefaultTheme.colors,
@@ -49,6 +39,7 @@ export default class App extends Component<Props> {
         this.state = {
             videoUrl: ''
         };
+        console.log("User logged? " + (auth().currentUser !== null));
         storage().ref('anim/Miksing_Logo-Animated.mp4').getDownloadURL()
             .then((url) => {
                 this.updateVideoUrl(url);
@@ -72,7 +63,7 @@ export default class App extends Component<Props> {
                        resizeMode={'contain'}
                        repeat={true}
                        style={styles.backgroundVideo}/>
-                <NavigationContainer theme={MyTheme}>
+                <NavigationContainer theme={Theme}>
                     <Tab.Navigator
                         initialRouteName="Home"
                         activeColor="#330000"
