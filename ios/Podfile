@@ -34,6 +34,13 @@ target 'Miksing' do
   pod 'glog', :podspec => '../node_modules/react-native/third-party-podspecs/glog.podspec'
   pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
 
+  # pod 'react-native-video/VideoCaching', :path => '../node_modules/react-native-video/react-native-video.podspec'
+  pod 'react-native-video', :path => '../node_modules/react-native-video'
+
+  pod 'RNFBStorage', :path => '../node_modules/@react-native-firebase/storage'
+
+  pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
+
   target 'MiksingTests' do
     inherit! :search_paths
     # Pods for testing

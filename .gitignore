@@ -60,6 +60,7 @@ buck-out/
 
 # Google servicecs
 /android/app/google-services.json
+/ios/Miksing/GoogleService-Info.plist
 
 # Local properties
 /android/local.properties
