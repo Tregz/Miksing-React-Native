@@ -1,11 +1,3 @@
-/**
- * Sample React Native App with Firebase
- * https://github.com/invertase/react-native-firebase
- *
- * @format
- * @flow
- */
-
 import React, {Component} from 'react';
 import {Platform, StyleSheet, Text, View, ScrollView, Dimensions} from 'react-native';
 
@@ -24,8 +16,9 @@ import {createMaterialBottomTabNavigator} from '@react-navigation/material-botto
 import {NavigationContainer} from '@react-navigation/native';
 import {Appbar, DefaultTheme} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import {WebView} from 'react-native-webview';
-import Video from 'react-native-video';
+// https://www.npmjs.com/package/react-native-video-player
+// import Video from 'react-native-video-player'; Video with controls
+import Video from 'react-native-video'
 
 const Tab = createMaterialBottomTabNavigator();
 const colorPrimary = '#ff9933';
@@ -39,8 +32,8 @@ const MyTheme = {
 };
 
 const instructions = Platform.select({
-    ios: 'Press Cmd+R to reload,\nCmd+D or shake for dev menu',
-    android: 'Double tap R on your keyboard to reload,\nShake or press menu button for dev menu',
+    ios: 'Come back later to enjoy\nthis iOS mixing app',
+    android: 'Come back later to enjoy\nthis Android mixing app',
 });
 
 const firebaseCredentials = Platform.select({
@@ -67,7 +60,7 @@ export default class App extends Component<Props> {
     }
 
     updateVideoUrl = (value) => {
-        this.setState({videoUrl: value}, console.log('Video url updated: ' + this.state.videoUrl));
+        this.setState({videoUrl: value}, console.log('Video url updated: ' + value));
     };
 
     render() {
@@ -76,12 +69,7 @@ export default class App extends Component<Props> {
             <>
                 <Toolbar/>
                 <Video source={{uri: videoUrl}}
-                       ref={(ref) => {
-                           console.log("Video ref: " + ref)
-                           if (ref !== null) this.player = ref; // Store reference
-                       }}
-                       onBuffer={this.onBuffer} // Callback when remote video is buffering
-                       onError={this.videoError} // Callback when video cannot be loaded
+                       resizeMode={'contain'}
                        repeat={true}
                        style={styles.backgroundVideo}/>
                 <NavigationContainer theme={MyTheme}>
@@ -144,8 +132,8 @@ function HomeScreen() {
         <ScrollView>
             {/* <WebView style={styles.webView} source={{ uri: 'https://reactnative.dev/' }} /> */}
             <View style={styles.container}>
-                <Text style={styles.welcome}>Welcome to React Native + Firebase!</Text>
-                <Text style={styles.instructions}>To get started, edit App.js</Text>
+                <Text style={styles.welcome}>Welcome to Miksing!</Text>
+                <Text style={styles.instructions}>React native version</Text>
                 <Text style={styles.instructions}>{instructions}</Text>
                 {!firebase.apps.length && (
                     <Text style={styles.instructions}>
