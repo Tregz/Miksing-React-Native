@@ -183,8 +183,6 @@ android {
 
 dependencies {
     implementation project(':react-native-vector-icons')
-    implementation project(':@react-native-firebase_storage')
-    implementation project(':react-native-video')
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules
 

@@ -34,8 +34,8 @@ export default class App extends Component<Props> {
     constructor(props) {
         super(props);
         this.state = {
-            videoUrl: null,
-            injectJS: null,
+            videoStyle: styles.panoramic,
+            videoUrl: null
         };
         // Firebase authentication
         console.log('User logged? ' + (auth().currentUser !== null));
@@ -56,6 +56,11 @@ export default class App extends Component<Props> {
             console.log('Error: ' + error);
         });
     }
+
+    onVideoSelected = (value) => {
+        this.setState({videoStyle: styles.hide});
+        this.webRef.injectJavaScript("loadVideoById(\'" + value + "\');");
+    };
 
     updateVideoUrl = (value) => {
         this.setState({videoUrl: value}, console.log('Video url updated: ' + value));
@@ -98,11 +103,24 @@ export default class App extends Component<Props> {
         }
 
         function onItemClick(value) {
-            context.setState({insertJS: `javascript:(function(){cueVideoById('` + value + `');})();`});
+            context.onVideoSelected(value);
         }
 
         return (
-            <>
+            <FlatList data={songs} renderItem={({item}) =>
+                <Card>
+                    <TouchableOpacity onPress={(e) => onItemClick(item.key)}>
+                        <Text>{item.name}</Text>
+                        <Text style={{fontWeight: 'bold'}}>{item.mark}</Text>
+                    </TouchableOpacity>
+                </Card>
+            }/>
+        );
+    };
+
+    SettingsScreen() {
+        return (
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                 <ScrollView>
                     <View style={styles.container}>
                         <Text style={styles.welcome}>Welcome to Miksing!</Text>
@@ -110,29 +128,13 @@ export default class App extends Component<Props> {
                         <Text style={styles.instructions}>{instructions}</Text>
                     </View>
                 </ScrollView>
-                <FlatList data={songs} renderItem={({item}) =>
-                    <Card>
-                        <TouchableOpacity onPress={(e) => onItemClick(item.key)}>
-                            <Text>{item.name}</Text>
-                            <Text style={{fontWeight: 'bold'}}>{item.mark}</Text>
-                        </TouchableOpacity>
-                    </Card>
-                }/>
-            </>
-        );
-    };
-
-    SettingsScreen() {
-        return (
-            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                <Text>Settings!</Text>
             </View>
         );
     }
 
     render() {
+        const {videoStyle} = this.state;
         const {videoUrl} = this.state;
-        const {injectJS} = this.state;
         // Same file for each platform, different folder
         const isAndroid = Platform.OS === 'android';
         const androidWidgetYouTubePlayer = 'file:///android_asset/widget/youtube.html';
@@ -140,21 +142,23 @@ export default class App extends Component<Props> {
         return (
             <>
                 <Toolbar/>
-                <Video source={videoUrl ? {uri: videoUrl} : null}
-                       resizeMode={'contain'}
-                       repeat={true}
-                       style={styles.panoramic}/>
-                <WebView
-                    style={styles.panoramic}
-                    originWhitelist={['*']}
-                    allowFileAccess={true}
-                    javaScriptEnabled={true}
-                    injectedJavaScript={injectJS}
-                    source={isAndroid ? {uri: androidWidgetYouTubePlayer} : iOSWidgetYouTubePlayer}
-                    domStorageEnabled={true}
-                    allowUniversalAccessFromFileURLs={true}
-                    allowFileAccessFromFileURLs={true}
-                    mixedContentMode="always"/>
+                <View>
+                    <WebView
+                        ref={r => (this.webRef = r)}
+                        source={isAndroid ? {uri: androidWidgetYouTubePlayer} : iOSWidgetYouTubePlayer}
+                        mediaPlaybackRequiresUserAction={false}
+                        javaScriptEnabled={true}
+                        style={styles.panoramic}
+                        containerStyle={styles.panoramic}/>
+                    <View style={styles.overLay}>
+                        <Video
+                            repeat={true}
+                            resizeMode={'contain'}
+                            source={videoUrl ? {uri: videoUrl} : null}
+                            style={videoStyle}>
+                        </Video>
+                    </View>
+                </View>
                 <NavigationContainer theme={Theme}>
                     <Tab.Navigator
                         initialRouteName="Home"
@@ -215,10 +219,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#F5FCFF',
     },
-    welcome: {
-        fontSize: 20,
-        textAlign: 'center',
-        margin: 10,
+    hide: {
+        display: 'none'
     },
     instructions: {
         textAlign: 'center',
@@ -228,9 +230,20 @@ const styles = StyleSheet.create({
     navBar: {
         backgroundColor: colorPrimary,
     },
+    overLay: {
+        height: 100,
+        width: "100%",
+        position: "absolute",
+
+    },
     panoramic: {
-        backgroundColor: colorPrimary,
-        flex: 1,
-        height: Dimensions.get('window').width * 9 / 16
+        flex: 0,
+        height: Dimensions.get('window').width * 9 / 16,
+        backgroundColor: colorPrimary
+    },
+    welcome: {
+        fontSize: 20,
+        textAlign: 'center',
+        margin: 10,
     },
 });
