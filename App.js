@@ -3,20 +3,25 @@ import {Platform, StyleSheet, Text, View, ScrollView, Dimensions, FlatList, Touc
 import {Card} from 'react-native-elements';
 import {Appbar, DefaultTheme} from 'react-native-paper';
 import Video from 'react-native-video';
+import WebView from 'react-native-webview';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import {createMaterialBottomTabNavigator} from '@react-navigation/material-bottom-tabs';
 import {NavigationContainer} from '@react-navigation/native';
 
-import firebase from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
 import database from '@react-native-firebase/database';
 import storage from '@react-native-firebase/storage';
-import WebView from 'react-native-webview';
+
+import iOSWidgetYouTubePlayer from './resources/youtube.html';
 
 const Tab = createMaterialBottomTabNavigator();
 const colorPrimary = '#ff9933';
 const defaultUser = 'Zdh2ZOt9AOMKih2cNv00XSwk3fh1';
+const instructions = Platform.select({
+    ios: 'Come back later to enjoy\nthis iOS mixing app',
+    android: 'Come back later to enjoy\nthis Android mixing app',
+});
 const Theme = {
     ...DefaultTheme,
     colors: {
@@ -25,23 +30,12 @@ const Theme = {
     },
 };
 
-const instructions = Platform.select({
-    ios: 'Come back later to enjoy\nthis iOS mixing app',
-    android: 'Come back later to enjoy\nthis Android mixing app',
-});
-
-const firebaseCredentials = Platform.select({
-    ios: 'https://invertase.link/firebase-ios',
-    android: 'https://invertase.link/firebase-android',
-});
-
-type Props = {};
-
 export default class App extends Component<Props> {
     constructor(props) {
         super(props);
         this.state = {
             videoUrl: null,
+            injectJS: null,
         };
         // Firebase authentication
         console.log('User logged? ' + (auth().currentUser !== null));
@@ -67,12 +61,82 @@ export default class App extends Component<Props> {
         this.setState({videoUrl: value}, console.log('Video url updated: ' + value));
     };
 
+    HomeScreen = () => {
+        const context = this;
+        const [loading, setLoading] = useState(true);
+        const [songs, setSongs] = useState([]);
+        const list = [];
+
+        // Handle user snapshot response
+        function onUserSnapshot(snapshot) {
+            snapshot.forEach(song => {
+                list.push({
+                    key: song.key, // Add custom key for FlatList usage
+                    ...song,
+                });
+                database().ref(`/song/${song.key}/`).once('value', onSongSnapshot);
+            });
+            setSongs(list);
+            setLoading(false);
+        }
+
+        // Handle song snapshot response
+        function onSongSnapshot(snapshot) {
+            const song = list.find(x => x.key === snapshot.key);
+            if (song !== undefined) {
+                song.name = snapshot.val().name;
+                song.mark = snapshot.val().mark;
+            }
+        }
+
+        useEffect(() => {
+            database().ref(`/user/${defaultUser}/song/`).once('value', onUserSnapshot);
+        }, [defaultUser]);
+
+        if (loading) {
+            return <Text>Loading songs...</Text>;
+        }
+
+        function onItemClick(value) {
+            context.setState({insertJS: `javascript:(function(){cueVideoById('` + value + `');})();`});
+        }
+
+        return (
+            <>
+                <ScrollView>
+                    <View style={styles.container}>
+                        <Text style={styles.welcome}>Welcome to Miksing!</Text>
+                        <Text style={styles.instructions}>React native version</Text>
+                        <Text style={styles.instructions}>{instructions}</Text>
+                    </View>
+                </ScrollView>
+                <FlatList data={songs} renderItem={({item}) =>
+                    <Card>
+                        <TouchableOpacity onPress={(e) => onItemClick(item.key)}>
+                            <Text>{item.name}</Text>
+                            <Text style={{fontWeight: 'bold'}}>{item.mark}</Text>
+                        </TouchableOpacity>
+                    </Card>
+                }/>
+            </>
+        );
+    };
+
+    SettingsScreen() {
+        return (
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                <Text>Settings!</Text>
+            </View>
+        );
+    }
+
     render() {
         const {videoUrl} = this.state;
+        const {injectJS} = this.state;
         // Same file for each platform, different folder
-        const isAndroid = Platform.OS==='android';
+        const isAndroid = Platform.OS === 'android';
         const androidWidgetYouTubePlayer = 'file:///android_asset/widget/youtube.html';
-        const iOSWidgetYouTubePlayer = './external/widget/index.html';
+
         return (
             <>
                 <Toolbar/>
@@ -85,7 +149,8 @@ export default class App extends Component<Props> {
                     originWhitelist={['*']}
                     allowFileAccess={true}
                     javaScriptEnabled={true}
-                    source={{uri: isAndroid? androidWidgetYouTubePlayer: iOSWidgetYouTubePlayer}}
+                    injectedJavaScript={injectJS}
+                    source={isAndroid ? {uri: androidWidgetYouTubePlayer} : iOSWidgetYouTubePlayer}
                     domStorageEnabled={true}
                     allowUniversalAccessFromFileURLs={true}
                     allowFileAccessFromFileURLs={true}
@@ -98,17 +163,16 @@ export default class App extends Component<Props> {
                         sceneAnimationEnabled={false}>
                         <Tab.Screen
                             name="Home"
-                            component={HomeScreen}
+                            component={this.HomeScreen}
                             options={{
                                 tabBarLabel: 'Home',
                                 tabBarIcon: ({color}) => (
                                     <MaterialIcons name="home" color={color} size={26}/>
                                 ),
-                            }}
-                        />
+                            }}/>
                         <Tab.Screen
                             name="Settings"
-                            component={SettingsScreen}
+                            component={this.SettingsScreen}
                             options={{
                                 tabBarLabel: 'Settings',
                                 tabBarIcon: ({color}) => (
@@ -131,13 +195,8 @@ export class Toolbar extends React.Component {
     render() {
         return (
             <Appbar.Header style={styles.navBar}>
-                <Appbar.BackAction
-                    onPress={this._goBack}
-                />
-                <Appbar.Content
-                    title="Miksing"
-                    subtitle="App dev demo"
-                />
+                <Appbar.BackAction onPress={this._goBack}/>
+                <Appbar.Content title="Miksing" subtitle="App dev demo"/>
                 <Appbar.Action icon="magnify" onPress={this._handleSearch}/>
                 <Appbar.Action icon="dots-vertical" onPress={this._handleMore}/>
             </Appbar.Header>
@@ -147,85 +206,6 @@ export class Toolbar extends React.Component {
 
 async function realtimeDatabase() {
     await database().ref(`/user/${defaultUser}`).once('value');
-}
-
-function HomeScreen() {
-    return (
-        <>
-            <ScrollView>
-                <View style={styles.container}>
-                    <Text style={styles.welcome}>Welcome to Miksing!</Text>
-                    <Text style={styles.instructions}>React native version</Text>
-                    <Text style={styles.instructions}>{instructions}</Text>
-                    {!firebase.apps.length && (
-                        <Text style={styles.instructions}>
-                            {`\nYou currently have no Firebase apps registered, this most likely means you've not downloaded your project credentials. Visit the link below to learn more. \n\n ${firebaseCredentials}`}
-                        </Text>
-                    )}
-                </View>
-            </ScrollView>
-            {playlist(defaultUser)}
-        </>
-    );
-}
-
-function SettingsScreen() {
-    return (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-            <Text>Settings!</Text>
-        </View>
-    );
-}
-
-function playlist(uid) {
-    const [loading, setLoading] = useState(true);
-    const [songs, setSongs] = useState([]);
-    const list = [];
-
-    // Handle user snapshot response
-    function onUserSnapshot(snapshot) {
-        snapshot.forEach(song => {
-            list.push({
-                key: song.key, // Add custom key for FlatList usage
-                ...song,
-            });
-            database().ref(`/song/${song.key}/`).once('value', onSongSnapshot);
-        });
-        setSongs(list);
-        setLoading(false);
-    }
-
-    // Handle song snapshot response
-    function onSongSnapshot(snapshot) {
-        const song = list.find(x => x.key === snapshot.key);
-        if (song !== undefined) {
-            song.name = snapshot.val().name;
-            song.mark = snapshot.val().mark;
-        }
-    }
-
-    useEffect(() => {
-        database().ref(`/user/${uid}/song/`).once('value', onUserSnapshot);
-    }, [uid]);
-
-    if (loading) {
-        return <Text>Loading songs...</Text>;
-    }
-
-    function onItemClicked(id) {
-        console.log("Clicked: " + id)
-    }
-
-    return <FlatList data={songs} renderItem={({ item }) =>
-        <>
-            <Card>
-                <TouchableOpacity onPress={(e) => onItemClicked(item.key)}>
-                    <Text>{item.name}</Text>
-                    <Text style={{fontWeight: 'bold'}}>{item.mark}</Text>
-                </TouchableOpacity>
-            </Card>
-        </>
-    } />;
 }
 
 const styles = StyleSheet.create({
