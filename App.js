@@ -34,11 +34,21 @@ export default class App extends Component<Props> {
     constructor(props) {
         super(props);
         this.state = {
+            /* TODO
+            https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
+            listLoading: false,
+            listData: null,
+            listError: null, */
+            listUpdatedAt: new Date(),
             videoStyle: styles.panoramic,
             videoUrl: null
         };
         // Firebase authentication
         console.log('User logged? ' + (auth().currentUser !== null));
+        // Search results
+        /* TODO
+        https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
+        this.arrayholder = []; */
     }
 
     componentDidMount(): void {
@@ -51,11 +61,14 @@ export default class App extends Component<Props> {
             }).catch(error => {
             console.log('Error: ' + error);
         });
-        // Firebase database
-        realtimeDatabase().catch(error => {
-            console.log('Error: ' + error);
-        });
     }
+
+    /* TODO?
+    https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
+    setSongs = (value) => {
+        //this.setState({listDate: value});
+        this.HomeScreen.updateSongs()
+    }; */
 
     onVideoSelected = (value) => {
         this.setState({videoStyle: styles.hide});
@@ -79,11 +92,19 @@ export default class App extends Component<Props> {
                     key: song.key, // Add custom key for FlatList usage
                     ...song,
                 });
-                database().ref(`/song/${song.key}/`).once('value', onSongSnapshot);
+                database().ref(`/song/${song.key}/`).once('value', onSongSnapshot).catch(error => {
+                    console.log('Error: ' + error);
+                });
             });
             setSongs(list);
             setLoading(false);
         }
+
+        /* TODO?
+        https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
+        function updateSongs(value) {
+            setSongs(value);
+        } */
 
         // Handle song snapshot response
         function onSongSnapshot(snapshot) {
@@ -95,7 +116,9 @@ export default class App extends Component<Props> {
         }
 
         useEffect(() => {
-            database().ref(`/user/${defaultUser}/song/`).once('value', onUserSnapshot);
+            database().ref(`/user/${defaultUser}/song/`).once('value', onUserSnapshot).catch(error => {
+                console.log('Error: ' + error);
+            });
         }, [defaultUser]);
 
         if (loading) {
@@ -107,7 +130,9 @@ export default class App extends Component<Props> {
         }
 
         return (
-            <FlatList data={songs} renderItem={({item}) =>
+            // TODO extra data to auto update list?
+            // https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
+            <FlatList data={songs} /* extraData={context.listUpdatedAt}*/ renderItem={({item}) =>
                 <Card>
                     <TouchableOpacity onPress={(e) => onItemClick(item.key)}>
                         <Text>{item.name}</Text>
@@ -222,17 +247,13 @@ export class Toolbar extends React.Component {
                     placeholder="Search"
                     style={searchStyle}
                     value={search}/>
-                <Appbar.BackAction onPress={this.goBack}/>
+                <Appbar.BackAction onPress={this.goBack} style={styles.hide}/>
                 <Appbar.Content title="Miksing" subtitle="App dev demo"/>
                 <Appbar.Action icon="magnify" onPress={this.handleSearch}/>
-                <Appbar.Action icon="dots-vertical" onPress={this.handleMore}/>
+                {/*<Appbar.Action icon="dots-vertical" onPress={this.handleMore}/>*/}
             </Appbar.Header>
         );
     }
-}
-
-async function realtimeDatabase() {
-    await database().ref(`/user/${defaultUser}`).once('value');
 }
 
 const styles = StyleSheet.create({
