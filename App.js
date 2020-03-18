@@ -1,7 +1,7 @@
 import React, {Component, useState, useEffect} from 'react';
 import {Platform, StyleSheet, Text, View, ScrollView, Dimensions, FlatList, TouchableOpacity} from 'react-native';
 import {Card} from 'react-native-elements';
-import {Appbar, DefaultTheme} from 'react-native-paper';
+import {Appbar, DefaultTheme, Searchbar} from 'react-native-paper';
 import Video from 'react-native-video';
 import WebView from 'react-native-webview';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -133,8 +133,7 @@ export default class App extends Component<Props> {
     }
 
     render() {
-        const {videoStyle} = this.state;
-        const {videoUrl} = this.state;
+        const {videoStyle, videoUrl} = this.state;
         // Same file for each platform, different folder
         const isAndroid = Platform.OS === 'android';
         const androidWidgetYouTubePlayer = 'file:///android_asset/widget/youtube.html';
@@ -192,17 +191,41 @@ export default class App extends Component<Props> {
 }
 
 export class Toolbar extends React.Component {
-    _goBack = () => console.log('Went back');
-    _handleSearch = () => console.log('Searching');
-    _handleMore = () => console.log('Shown more');
+    constructor() {
+        super();
+        this.state = {
+            search: '',
+            searchStyle: styles.hide
+        }
+    }
+
+    goBack = () => console.log('Went back');
+    handleMore = () => console.log('Shown more');
+    handleSearch = () => this.setState({ searchStyle: null});
+    onSearchIconPress = () => {
+        this.setState({ searchStyle: styles.hide});
+        this.setState({ search: '' });
+    };
+
+    updateSearch = search => {
+        this.setState({ search: search });
+    };
 
     render() {
+        const {search, searchStyle} = this.state
         return (
             <Appbar.Header style={styles.navBar}>
-                <Appbar.BackAction onPress={this._goBack}/>
+                <Searchbar
+                    icon={() => <MaterialIcons name="close" color={'#000'} size={26}/>}
+                    onChangeText={this.updateSearch}
+                    onIconPress={this.onSearchIconPress}
+                    placeholder="Search"
+                    style={searchStyle}
+                    value={search}/>
+                <Appbar.BackAction onPress={this.goBack}/>
                 <Appbar.Content title="Miksing" subtitle="App dev demo"/>
-                <Appbar.Action icon="magnify" onPress={this._handleSearch}/>
-                <Appbar.Action icon="dots-vertical" onPress={this._handleMore}/>
+                <Appbar.Action icon="magnify" onPress={this.handleSearch}/>
+                <Appbar.Action icon="dots-vertical" onPress={this.handleMore}/>
             </Appbar.Header>
         );
     }
