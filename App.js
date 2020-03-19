@@ -1,6 +1,5 @@
-import React, {Component, useState, useEffect} from 'react';
-import {Platform, StyleSheet, Text, View, ScrollView, Dimensions, FlatList, TouchableOpacity} from 'react-native';
-import {Card} from 'react-native-elements';
+import React, {Component, useState} from 'react';
+import {Platform, StyleSheet, Text, View, ScrollView, Dimensions} from 'react-native';
 import {Appbar, DefaultTheme, Searchbar} from 'react-native-paper';
 import Video from 'react-native-video';
 import WebView from 'react-native-webview';
@@ -10,14 +9,13 @@ import {createMaterialBottomTabNavigator} from '@react-navigation/material-botto
 import {NavigationContainer} from '@react-navigation/native';
 
 import auth from '@react-native-firebase/auth';
-import database from '@react-native-firebase/database';
 import storage from '@react-native-firebase/storage';
 
 import iOSWidgetYouTubePlayer from './resources/youtube.html';
+import HomeScreen from './screens/HomeScreen';
 
 const Tab = createMaterialBottomTabNavigator();
 const colorPrimary = '#ff9933';
-const defaultUser = 'Zdh2ZOt9AOMKih2cNv00XSwk3fh1';
 const instructions = Platform.select({
     ios: 'Come back later to enjoy\nthis iOS mixing app',
     android: 'Come back later to enjoy\nthis Android mixing app',
@@ -30,25 +28,20 @@ const Theme = {
     },
 };
 
+type Props = {
+    onSearchQuery: (searchText: string) => void
+}
+
 export default class App extends Component<Props> {
     constructor(props) {
         super(props);
         this.state = {
-            /* TODO
-            https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
-            listLoading: false,
-            listData: null,
-            listError: null, */
-            listUpdatedAt: new Date(),
+            searchText: '',
             videoStyle: styles.panoramic,
-            videoUrl: null
+            videoUrl: null,
         };
         // Firebase authentication
         console.log('User logged? ' + (auth().currentUser !== null));
-        // Search results
-        /* TODO
-        https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
-        this.arrayholder = []; */
     }
 
     componentDidMount(): void {
@@ -63,84 +56,17 @@ export default class App extends Component<Props> {
         });
     }
 
-    /* TODO?
-    https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
-    setSongs = (value) => {
-        //this.setState({listDate: value});
-        this.HomeScreen.updateSongs()
-    }; */
+    onSearchQuery = (searchText) => {
+        this.setState({searchText: searchText});
+    };
 
     onVideoSelected = (value) => {
         this.setState({videoStyle: styles.hide});
-        this.webRef.injectJavaScript("loadVideoById(\'" + value + "\');");
+        this.webRef.injectJavaScript('loadVideoById(\'' + value + '\');');
     };
 
     updateVideoUrl = (value) => {
         this.setState({videoUrl: value}, console.log('Video url updated: ' + value));
-    };
-
-    HomeScreen = () => {
-        const context = this;
-        const [loading, setLoading] = useState(true);
-        const [songs, setSongs] = useState([]);
-        const list = [];
-
-        // Handle user snapshot response
-        function onUserSnapshot(snapshot) {
-            snapshot.forEach(song => {
-                list.push({
-                    key: song.key, // Add custom key for FlatList usage
-                    ...song,
-                });
-                database().ref(`/song/${song.key}/`).once('value', onSongSnapshot).catch(error => {
-                    console.log('Error: ' + error);
-                });
-            });
-            setSongs(list);
-            setLoading(false);
-        }
-
-        /* TODO?
-        https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
-        function updateSongs(value) {
-            setSongs(value);
-        } */
-
-        // Handle song snapshot response
-        function onSongSnapshot(snapshot) {
-            const song = list.find(x => x.key === snapshot.key);
-            if (song !== undefined) {
-                song.name = snapshot.val().name;
-                song.mark = snapshot.val().mark;
-            }
-        }
-
-        useEffect(() => {
-            database().ref(`/user/${defaultUser}/song/`).once('value', onUserSnapshot).catch(error => {
-                console.log('Error: ' + error);
-            });
-        }, [defaultUser]);
-
-        if (loading) {
-            return <Text>Loading songs...</Text>;
-        }
-
-        function onItemClick(value) {
-            context.onVideoSelected(value);
-        }
-
-        return (
-            // TODO extra data to auto update list?
-            // https://www.freecodecamp.org/news/how-to-build-a-react-native-flatlist-with-realtime-searching-ability-81ad100f6699/
-            <FlatList data={songs} /* extraData={context.listUpdatedAt}*/ renderItem={({item}) =>
-                <Card>
-                    <TouchableOpacity onPress={(e) => onItemClick(item.key)}>
-                        <Text>{item.name}</Text>
-                        <Text style={{fontWeight: 'bold'}}>{item.mark}</Text>
-                    </TouchableOpacity>
-                </Card>
-            }/>
-        );
     };
 
     SettingsScreen() {
@@ -164,8 +90,8 @@ export default class App extends Component<Props> {
         const androidWidgetYouTubePlayer = 'file:///android_asset/widget/youtube.html';
 
         return (
-            <>
-                <Toolbar/>
+            <NavigationContainer theme={Theme}>
+                <Toolbar onSearchQuery={this.onSearchQuery}/>
                 <View>
                     <WebView
                         ref={r => (this.webRef = r)}
@@ -183,78 +109,69 @@ export default class App extends Component<Props> {
                         </Video>
                     </View>
                 </View>
-                <NavigationContainer theme={Theme}>
-                    <Tab.Navigator
-                        initialRouteName="Home"
-                        activeColor="#330000"
-                        shifting={true}
-                        sceneAnimationEnabled={false}>
-                        <Tab.Screen
-                            name="Home"
-                            component={this.HomeScreen}
-                            options={{
-                                tabBarLabel: 'Home',
-                                tabBarIcon: ({color}) => (
-                                    <MaterialIcons name="home" color={color} size={26}/>
-                                ),
-                            }}/>
-                        <Tab.Screen
-                            name="Settings"
-                            component={this.SettingsScreen}
-                            options={{
-                                tabBarLabel: 'Settings',
-                                tabBarIcon: ({color}) => (
-                                    <MaterialIcons name="settings" color={color} size={26}/>
-                                ),
-                            }}
-                        />
-                    </Tab.Navigator>
-                </NavigationContainer>
-            </>
+                <Tab.Navigator
+                    initialRouteName="Home"
+                    activeColor="#330000"
+                    shifting={true}
+                    sceneAnimationEnabled={false}>
+                    <Tab.Screen
+                        name="Home"
+                        options={{
+                            tabBarLabel: 'Home',
+                            tabBarIcon: ({color}) => (
+                                <MaterialIcons name="home" color={color} size={26}/>
+                            ),
+                        }}>
+                        {props => <HomeScreen
+                            {...props}
+                            onVideoSelected={this.onVideoSelected}
+                            searchText={this.state.searchText}/>}
+                    </Tab.Screen>
+                    <Tab.Screen
+                        name="Settings"
+                        screenState
+                        component={this.SettingsScreen}
+                        options={{
+                            tabBarLabel: 'Settings',
+                            tabBarIcon: ({color}) => (
+                                <MaterialIcons name="settings" color={color} size={26}/>
+                            ),
+                        }}
+                    />
+                </Tab.Navigator>
+            </NavigationContainer>
         );
     }
 }
 
-export class Toolbar extends React.Component {
-    constructor() {
-        super();
-        this.state = {
-            search: '',
-            searchStyle: styles.hide
-        }
-    }
+const Toolbar = ({onSearchQuery}: Props) => {
+    const [searchText, setSearchText] = useState([]);
+    const [searchStyle, setSearchStyle] = useState(styles.hide);
 
-    goBack = () => console.log('Went back');
-    handleMore = () => console.log('Shown more');
-    handleSearch = () => this.setState({ searchStyle: null});
-    onSearchIconPress = () => {
-        this.setState({ searchStyle: styles.hide});
-        this.setState({ search: '' });
+    const goBack = () => console.log('Went back');
+    //const handleMore = () => console.log('Shown more');
+    const handleSearch = () => setSearchStyle(null);
+    const onSearchIconPress = () => {
+        setSearchStyle(styles.hide);
+        setSearchText('');
     };
 
-    updateSearch = search => {
-        this.setState({ search: search });
-    };
-
-    render() {
-        const {search, searchStyle} = this.state
-        return (
-            <Appbar.Header style={styles.navBar}>
-                <Searchbar
-                    icon={() => <MaterialIcons name="close" color={'#000'} size={26}/>}
-                    onChangeText={this.updateSearch}
-                    onIconPress={this.onSearchIconPress}
-                    placeholder="Search"
-                    style={searchStyle}
-                    value={search}/>
-                <Appbar.BackAction onPress={this.goBack} style={styles.hide}/>
-                <Appbar.Content title="Miksing" subtitle="App dev demo"/>
-                <Appbar.Action icon="magnify" onPress={this.handleSearch}/>
-                {/*<Appbar.Action icon="dots-vertical" onPress={this.handleMore}/>*/}
-            </Appbar.Header>
-        );
-    }
-}
+    return (
+        <Appbar.Header style={styles.navBar}>
+            <Searchbar
+                icon={() => <MaterialIcons name="arrow-back" color={'#000'} size={26}/>}
+                onChangeText={onSearchQuery}
+                onIconPress={onSearchIconPress}
+                placeholder="Search"
+                style={searchStyle}
+                value={searchText}/>
+            <Appbar.BackAction onPress={goBack} style={styles.hide}/>
+            <Appbar.Content title="Miksing" subtitle="App dev demo"/>
+            <Appbar.Action icon="magnify" onPress={handleSearch}/>
+            {/*<Appbar.Action icon="dots-vertical" onPress={handleMore}/>*/}
+        </Appbar.Header>
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -264,7 +181,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F5FCFF',
     },
     hide: {
-        display: 'none'
+        display: 'none',
     },
     instructions: {
         textAlign: 'center',
@@ -276,14 +193,14 @@ const styles = StyleSheet.create({
     },
     overLay: {
         height: 100,
-        width: "100%",
-        position: "absolute",
+        width: '100%',
+        position: 'absolute',
 
     },
     panoramic: {
         flex: 0,
         height: Dimensions.get('window').width * 9 / 16,
-        backgroundColor: colorPrimary
+        backgroundColor: colorPrimary,
     },
     welcome: {
         fontSize: 20,

@@ -17,14 +17,15 @@
     "@react-native-firebase/database": "^6.3.4",
     "@react-native-firebase/storage": "^6.3.4",
     "@react-navigation/material-bottom-tabs": "^5.1.1",
-    "@react-navigation/native": "^5.0.7",
+    "@react-navigation/native": "^5.1.0",
     "react": "16.11.0",
     "react-native": "^0.62.0-rc.0",
     "react-native-elements": "^1.2.7",
     "react-native-paper": "^3.6.0",
     "react-native-vector-icons": "^6.6.0",
     "react-native-video": "^5.0.2",
-    "react-native-webview": "^8.1.2"
+    "react-native-webview": "^8.1.2",
+    "react-native-windows": "^0.61.0-beta.58"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",
@@ -41,5 +42,8 @@
   },
   "jest": {
     "preset": "react-native"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.1"
   }
 }
