@@ -14,9 +14,9 @@
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
     const SECONDS_BEFORE_END = 10;
-    let iFrames, players, playlist;
+    let iFrames, playerLoadingPosition, players, playlist = [];
     let fadingOut = 0, fadingIn = 0, fadingStepLevel = 5, loopIn, loopOut;
-    let currentTime, duration, starting, stopping, videoLoadingId, videoPlayingId;
+    let starting = null, stopping, videoLoadingId, videoBufferingId, videoPlayingId;
 
     function onYouTubeIframeAPIReady() {
         const player_vars = {showinfo: '0', modestbranding: '1'};
@@ -30,34 +30,34 @@
 
     function onPlayerReady(event) {
         event.target.playVideo();
-        //event.target.setVolume('0');
     }
 
     function onPlayerStateChange(event) {
         if (event.data === YT.PlayerState.PLAYING) {
-            videoPlayingId = videoLoadingId
-            fadeUp();
-            setTimeout(fadeOut, 100);
-        } else if (event.data === YT.PlayerState.CUED) {
-            //iFrames[0].style.opacity = 1;
-            //event.target.playVideo()
-        }
-        if (event.data === YT.PlayerState.BUFFERING) {
-            //event.target.playVideo()
-        }
+            if (videoPlayingId !== videoLoadingId && starting === null) {
+                fadingIn = 0;
+                clearInterval(loopIn);
+                starting = players[positionPlayerHidden()];
+                loopIn = setInterval(setVolumeUp, 200);
+                setTimeout(fadeOut, 100);
+            }
+        } else if (event.data === YT.PlayerState.BUFFERING) videoBufferingId = videoLoadingId
     }
 
     function countdown() {
+        const player = players[playerLoadingPosition];
         if (videoLoadingId === videoPlayingId) {
-            const playerPlaying = players[positionPlayerVisible()];
-            currentTime = playerPlaying.getCurrentTime();
-            duration = playerPlaying.duration;
-        }
-        if (currentTime > 0 && duration > 0) {
-            if (duration - currentTime < SECONDS_BEFORE_END) {
-                // TODO playNext
-            }
-        }
+            const currentTime = player.getCurrentTime();
+            const duration = player.getDuration();
+            if (currentTime > 0 && duration > 0 && duration - currentTime < SECONDS_BEFORE_END) next();
+        } else if (videoBufferingId !== null && player.getCurrentTime() === 0 && player.getDuration() > 0) next();
+    }
+
+    function next() {
+        const position = playlist.indexOf(videoLoadingId);
+        videoPlayingId = null;
+        videoBufferingId = null;
+        loadVideoById(playlist[position + 1 < playlist.length ? position + 1 : 0]);
     }
 
     function fadeOut() {
@@ -65,13 +65,6 @@
         clearInterval(loopOut);
         stopping = players[positionPlayerVisible()];
         loopOut = setInterval(setVolumeDown, 400);
-    }
-
-    function fadeUp() {
-        fadingIn = 0;
-        clearInterval(loopIn);
-        starting = players[positionPlayerHidden()];
-        loopIn = setInterval(setVolumeUp, 200);
     }
 
     function positionPlayerHidden() {
@@ -90,8 +83,8 @@
         }
     }
 
-    function setPlaylist(list) {
-        playlist = list;
+    function addVideoById(id) {
+        playlist[playlist.length] = id
     }
 
     function setVolumeDown() {
@@ -111,8 +104,10 @@
             let playerHidden = positionPlayerHidden();
             iFrames[playerHidden].style.visibility = 'visible';
             iFrames[playerHidden === 1 ? 0 : 1].style.visibility = 'hidden';
+            videoPlayingId = videoLoadingId;
         } else if (fadingIn === 100) {
             clearInterval(loopIn);
+            starting = null
         }
     }
 
@@ -122,7 +117,8 @@
 
     function loadVideoById(id) {
         videoLoadingId = id;
-        const playerHidden = players[positionPlayerHidden()];
+        playerLoadingPosition = positionPlayerHidden();
+        const playerHidden = players[playerLoadingPosition];
         playerHidden.setVolume(0);
         playerHidden.loadVideoById(id);
     }

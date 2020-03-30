@@ -17,6 +17,7 @@ const HomeScreen = (props) => {
                 key: song.key, // Add custom key for FlatList usage
                 ...song,
             });
+            props.onVideoAdded(song.key);
             database().ref(`/song/${song.key}/`).once('value', onSongSnapshot).catch(error => {
                 console.log('Error: ' + error);
             });

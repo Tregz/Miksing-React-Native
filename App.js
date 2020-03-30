@@ -54,10 +54,18 @@ export default class App extends Component<Props> {
             }).catch(error => {
             console.log('Error: ' + error);
         });
+
+        setInterval(() => {
+            this.webRef.injectJavaScript('countdown()');
+        },2000)
     }
 
     onSearchQuery = (searchText) => {
         this.setState({searchText: searchText});
+    };
+
+    onVideoAdded = (value) => {
+        this.webRef.injectJavaScript('addVideoById(\'' + value + '\');');
     };
 
     onVideoSelected = (value) => {
@@ -124,6 +132,7 @@ export default class App extends Component<Props> {
                         }}>
                         {props => <HomeScreen
                             {...props}
+                            onVideoAdded={this.onVideoAdded}
                             onVideoSelected={this.onVideoSelected}
                             searchText={this.state.searchText}/>}
                     </Tab.Screen>
