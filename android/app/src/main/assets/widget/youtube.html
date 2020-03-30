@@ -5,30 +5,27 @@
     <title>YouTube Player</title>
 </head>
 <body>
-<div id="player" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+<div id="player1" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+<div id="player2" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
 <script type='text/javascript'>
     const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
+    tag.src = 'https://www.youtube.com/iframe_api';
     const firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-    let player;
-    let iFrames;
+    const SECONDS_BEFORE_END = 10;
+    let iFrames, players, playlist;
+    let fadingOut = 0, fadingIn = 0, fadingStepLevel = 5, loopIn, loopOut;
+    let currentTime, duration, starting, stopping, videoLoadingId, videoPlayingId;
+
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            playerVars:{
-                showinfo:'0',
-                modestbranding:'1',
-                //mute: true, // else autoplay won't be allowed
-                //autoplay: true
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
-            }
-        });
+        const player_vars = {showinfo: '0', modestbranding: '1'};
+        const events = {'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange};
+        const player_one = new YT.Player('player1', {playerVars: player_vars, events: events});
+        const player_two = new YT.Player('player2', {playerVars: player_vars, events: events});
+        players = [player_one, player_two];
         iFrames = document.getElementsByTagName('iframe');
-        iFrames[0].style.opacity = 0;
+        iFrames[1].style.visibility = 'hidden';
     }
 
     function onPlayerReady(event) {
@@ -38,10 +35,10 @@
 
     function onPlayerStateChange(event) {
         if (event.data === YT.PlayerState.PLAYING) {
-            iFrames[0].style.opacity = 1;
-            //player.unMute();
-        }
-        else if (event.data === YT.PlayerState.CUED) {
+            videoPlayingId = videoLoadingId
+            fadeUp();
+            setTimeout(fadeOut, 100);
+        } else if (event.data === YT.PlayerState.CUED) {
             //iFrames[0].style.opacity = 1;
             //event.target.playVideo()
         }
@@ -50,20 +47,92 @@
         }
     }
 
+    function countdown() {
+        if (videoLoadingId === videoPlayingId) {
+            const playerPlaying = players[positionPlayerVisible()];
+            currentTime = playerPlaying.getCurrentTime();
+            duration = playerPlaying.duration;
+        }
+        if (currentTime > 0 && duration > 0) {
+            if (duration - currentTime < SECONDS_BEFORE_END) {
+                // TODO playNext
+            }
+        }
+    }
+
+    function fadeOut() {
+        fadingOut = 0;
+        clearInterval(loopOut);
+        stopping = players[positionPlayerVisible()];
+        loopOut = setInterval(setVolumeDown, 400);
+    }
+
+    function fadeUp() {
+        fadingIn = 0;
+        clearInterval(loopIn);
+        starting = players[positionPlayerHidden()];
+        loopIn = setInterval(setVolumeUp, 200);
+    }
+
+    function positionPlayerHidden() {
+        if (iFrames[0].style.visibility === 'visible') {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    function positionPlayerVisible() {
+        if (iFrames[0].style.visibility === 'visible') {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+
+    function setPlaylist(list) {
+        playlist = list;
+    }
+
+    function setVolumeDown() {
+        fadingOut += fadingStepLevel;
+        stopping.setVolume(100 - fadingOut);
+        if (fadingOut === 100) {
+            clearInterval(loopOut);
+            stopping.stopVideo();
+            stopping.setVolume(100);
+        }
+    }
+
+    function setVolumeUp() {
+        fadingIn += fadingStepLevel;
+        starting.setVolume(fadingIn);
+        if (fadingIn === 50) {
+            let playerHidden = positionPlayerHidden();
+            iFrames[playerHidden].style.visibility = 'visible';
+            iFrames[playerHidden === 1 ? 0 : 1].style.visibility = 'hidden';
+        } else if (fadingIn === 100) {
+            clearInterval(loopIn);
+        }
+    }
+
     function cueVideoById(id) {
-        player.cueVideoById(id, 0, 'large');
+        players[positionPlayerHidden()].cueVideoById(id, 0, 'large');
     }
 
     function loadVideoById(id) {
-        player.loadVideoById(id)
+        videoLoadingId = id;
+        const playerHidden = players[positionPlayerHidden()];
+        playerHidden.setVolume(0);
+        playerHidden.loadVideoById(id);
     }
 
     function playVideo() {
-        player.playVideo();
+        players[positionPlayerVisible()].playVideo();
     }
 
     function stopVideo() {
-        player.stopVideo();
+        players[positionPlayerVisible()].stopVideo();
     }
 </script>
 </body>

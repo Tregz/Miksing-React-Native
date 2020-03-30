@@ -31,7 +31,7 @@ const HomeScreen = (props) => {
         const song = arrayHolder.find(x => x.key === snapshot.key);
         if (song !== undefined) {
             song.name = snapshot.val().name;
-            song.mark = snapshot.val().mark;
+            song.artist = snapshot.val().artist;
         }
     };
 
@@ -46,9 +46,9 @@ const HomeScreen = (props) => {
             const itemName = `${item.name ? item.name.toUpperCase() : '' }`;
             const textData = props.searchText ? props.searchText : '';
             const startsWithName = itemName.indexOf(textData.toUpperCase()) > -1;
-            const itemMark = `${item.mark ? item.mark.toUpperCase() : '' }`;
-            const startsWithMark = itemMark.indexOf(textData.toUpperCase()) > -1;
-            return startsWithName | startsWithMark;
+            const itemArtist = `${item.artist ? item.artist.toUpperCase() : '' }`;
+            const startsWithArtist = itemArtist.indexOf(textData.toUpperCase()) > -1;
+            return startsWithName | startsWithArtist;
         });
         setArray(newArray);
     }, [props.searchText]);
@@ -57,18 +57,15 @@ const HomeScreen = (props) => {
         return <Text>Loading songs...</Text>;
     } else {
         return (
-            <>
-                <Text>{props.searchText}</Text>
-                <FlatList data={array} renderItem={({item}) =>
-                    <Card>
-                        <TouchableOpacity
-                            onPress={(e) => props.onVideoSelected(item.key)}>
-                            <Text>{item.name}</Text>
-                            <Text style={{fontWeight: 'bold'}}>{item.mark}</Text>
-                        </TouchableOpacity>
-                    </Card>
-                }/>
-            </>
+            <FlatList data={array} renderItem={({item}) =>
+                <Card>
+                    <TouchableOpacity
+                        onPress={(e) => props.onVideoSelected(item.key)}>
+                        <Text>{item.name}</Text>
+                        <Text style={{fontWeight: 'bold'}}>{item.artist}</Text>
+                    </TouchableOpacity>
+                </Card>
+            }/>
         );
     }
 };
